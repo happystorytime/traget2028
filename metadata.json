@@ -1,0 +1,6 @@
+{
+  "name": "CONSTITUENCY CONNECT",
+  "description": "Constituency Engagement & Issue Management platform for Sindhanur AC-58 with 124 village directory, village-wise member management (Aadhaar name, photo upload, Voter ID/EPIC), and mobile OTP authentication.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
