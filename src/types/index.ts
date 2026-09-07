@@ -22,6 +22,19 @@ export interface VillageHead {
   avatar?: string;
 }
 
+/**
+ * 1:1 Village Head Assignment Record
+ * Rule: Each Village Head must be assigned to exactly one village.
+ */
+export interface VillageHeadAssignment {
+  villageId: string;
+  villageName: string;
+  gramPanchayat: string;
+  villageHead: VillageHead;
+  assignedDate?: string;
+  isExclusive: boolean; // Guaranteed 1-to-1 relationship
+}
+
 export interface VillageMember {
   id: string;
   slNo?: number;

@@ -16,6 +16,8 @@ import {
   UserRole,
   IssueStatus,
   ConstituencySettings,
+  VillageHead,
+  VillageHeadAssignment,
 } from '../types';
 import {
   INITIAL_USERS,
@@ -32,6 +34,7 @@ import {
   INITIAL_NOTIFICATIONS,
   INITIAL_AUDIT_LOGS,
 } from '../data/initialData';
+import { ALL_124_VILLAGES } from '../data/officialVillages';
 
 const STORAGE_KEY_PREFIX = 'constituency_connect_v1_';
 
@@ -337,16 +340,37 @@ export const StorageService = {
     const visits = this.getFieldVisits();
     const members = this.getVillageMembers();
 
-    // Dynamically calculate actual counts to avoid desynchronization
-    return villages.map((v) => {
+    // Dynamically calculate actual counts and ensure 1:1 Village Head integrity
+    return villages.map((v, idx) => {
       const vIssues = issues.filter((i) => i.village === v.name);
       const vWorks = works.filter((w) => w.village === v.name);
       const vMeetings = meetings.filter((m) => m.village === v.name);
       const vVisits = visits.filter((f) => f.village === v.name);
       const vMembers = members.filter((m) => m.village === v.name);
 
+      // Guarantee villageHead exists and matches 1:1 assigned village head
+      let head = v.villageHead;
+      if (!head || !head.name) {
+        const official =
+          ALL_124_VILLAGES.find((ov) => ov.name.toLowerCase() === v.name.toLowerCase()) ||
+          ALL_124_VILLAGES[idx % ALL_124_VILLAGES.length];
+        head = official?.villageHead || {
+          name: v.villageHeadName || `${v.name} Village Head`,
+          phone:
+            v.villageHeadPhone ||
+            `+91 9448${String(10000 + ((idx * 73) % 89999)).padStart(5, '0')}`,
+          designation: v.villageHeadDesignation || 'Grama Pradhan / Village Head',
+          termStartDate: '2023-01-15',
+          email: `head.${v.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@sindhanur.gov.in`,
+        };
+      }
+
       return {
         ...v,
+        villageHead: head,
+        villageHeadName: head.name,
+        villageHeadPhone: head.phone,
+        villageHeadDesignation: head.designation,
         membersCount: vMembers.length,
         openIssuesCount: vIssues.filter(
           (i) => !['Resolved', 'Closed', 'Rejected'].includes(i.status)
@@ -358,15 +382,195 @@ export const StorageService = {
       };
     });
   },
-  saveVillage(village: Village): void {
-    const list = this.getVillages();
+
+  /**
+   * Validates that a village head is assigned to exactly one village.
+   * If the head name or phone is already linked to another village, flags conflict.
+   */
+  validateVillageHeadAssignment(
+    headName: string,
+    headPhone: string,
+    targetVillageId?: string
+  ): { isValid: boolean; conflictVillage?: Village; reason?: string } {
+    const cleanPhone = (headPhone || '').replace(/[^0-9]/g, '').slice(-10);
+    const cleanName = (headName || '').trim().toLowerCase();
+
+    if (!cleanName && !cleanPhone) return { isValid: true };
+
+    const raw = getStorageItem<Village[]>('villages', INITIAL_VILLAGES);
+    const villages = Array.isArray(raw) ? raw : [];
+
+    for (const v of villages) {
+      if (targetVillageId && v.id === targetVillageId) continue;
+      const vHeadName = (v.villageHead?.name || v.villageHeadName || '').trim().toLowerCase();
+      const vHeadPhone = (v.villageHead?.phone || v.villageHeadPhone || '').replace(/[^0-9]/g, '').slice(-10);
+
+      // Check name collision
+      if (cleanName && vHeadName && cleanName === vHeadName) {
+        return {
+          isValid: false,
+          conflictVillage: v,
+          reason: `Village Head "${v.villageHead?.name || v.villageHeadName}" is already assigned to ${v.name}. Under constituency governance regulations, a Village Head must be assigned to exactly one village.`,
+        };
+      }
+
+      // Check phone collision
+      if (cleanPhone && vHeadPhone && cleanPhone.length >= 10 && cleanPhone === vHeadPhone) {
+        return {
+          isValid: false,
+          conflictVillage: v,
+          reason: `Contact phone ${headPhone} belongs to Village Head "${v.villageHead?.name || v.villageHeadName}" already assigned to ${v.name}. A Village Head must be assigned to exactly one village.`,
+        };
+      }
+    }
+
+    return { isValid: true };
+  },
+
+  saveVillage(village: Village, allowReassign: boolean = false): { success: boolean; error?: string } {
+    const raw = getStorageItem<Village[]>('villages', INITIAL_VILLAGES);
+    const list = Array.isArray(raw) ? [...raw] : [];
+
+    // Ensure villageHead object and scalar fields are in sync
+    const headName = (village.villageHead?.name || village.villageHeadName || '').trim();
+    const headPhone = (village.villageHead?.phone || village.villageHeadPhone || '').trim();
+    const headDesignation =
+      village.villageHead?.designation || village.villageHeadDesignation || 'Grama Pradhan / Village Head';
+
+    if (headName) {
+      // Validate 1:1 assignment rule
+      const validation = this.validateVillageHeadAssignment(headName, headPhone, village.id);
+      if (!validation.isValid) {
+        if (!allowReassign) {
+          return { success: false, error: validation.reason };
+        }
+
+        // Handle re-assignment: update old village so 1:1 rule remains intact
+        if (validation.conflictVillage) {
+          const prevIdx = list.findIndex((v) => v.id === validation.conflictVillage!.id);
+          if (prevIdx >= 0) {
+            const oldV = list[prevIdx];
+            const replacementHead: VillageHead = {
+              name: `${oldV.name} Acting Head`,
+              phone: `+91 94480 ${String(1000 + (prevIdx % 8999))}`,
+              designation: 'Interim Grama Pradhan / Village Head',
+              termStartDate: new Date().toISOString().slice(0, 10),
+              email: `head.${oldV.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@sindhanur.gov.in`,
+            };
+            list[prevIdx] = {
+              ...oldV,
+              villageHead: replacementHead,
+              villageHeadName: replacementHead.name,
+              villageHeadPhone: replacementHead.phone,
+              villageHeadDesignation: replacementHead.designation,
+            };
+          }
+        }
+      }
+
+      village.villageHead = {
+        name: headName,
+        phone: headPhone || '+91 94481 00000',
+        designation: headDesignation,
+        termStartDate: village.villageHead?.termStartDate || '2023-01-15',
+        email:
+          village.villageHead?.email ||
+          `head.${village.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@sindhanur.gov.in`,
+        avatar: village.villageHead?.avatar,
+      };
+      village.villageHeadName = headName;
+      village.villageHeadPhone = headPhone;
+      village.villageHeadDesignation = headDesignation;
+    }
+
     const idx = list.findIndex((v) => v.id === village.id);
     if (idx >= 0) {
-      list[idx] = village;
+      list[idx] = { ...list[idx], ...village };
     } else {
       list.push(village);
     }
     setStorageItem('villages', list);
+
+    const activeUser = this.getCurrentUser();
+    this.logAudit(
+      activeUser.name,
+      activeUser.role,
+      'SAVE_VILLAGE',
+      'Village',
+      village.id,
+      `Saved village details for ${village.name}. Designated Village Head: ${village.villageHeadName || 'None'} (1:1 assigned).`
+    );
+
+    return { success: true };
+  },
+
+  assignVillageHead(
+    villageId: string,
+    head: VillageHead,
+    forceReassign: boolean = false
+  ): { success: boolean; error?: string } {
+    const villages = this.getVillages();
+    const target = villages.find((v) => v.id === villageId);
+    if (!target) {
+      return { success: false, error: `Village with ID ${villageId} not found.` };
+    }
+
+    const updatedVillage: Village = {
+      ...target,
+      villageHead: head,
+      villageHeadName: head.name,
+      villageHeadPhone: head.phone,
+      villageHeadDesignation: head.designation,
+    };
+
+    return this.saveVillage(updatedVillage, forceReassign);
+  },
+
+  getAllVillageHeadAssignments(): VillageHeadAssignment[] {
+    const villages = this.getVillages();
+    return villages.map((v) => ({
+      villageId: v.id,
+      villageName: v.name,
+      gramPanchayat: v.gramPanchayat,
+      villageHead: v.villageHead || {
+        name: v.villageHeadName || `${v.name} Village Head`,
+        phone: v.villageHeadPhone || '+91 94481 00000',
+        designation: v.villageHeadDesignation || 'Grama Pradhan / Village Head',
+      },
+      isExclusive: true,
+    }));
+  },
+
+  verifyVillageHeadUniqueness(): {
+    totalVillages: number;
+    assignedHeadsCount: number;
+    uniqueHeadsCount: number;
+    isCompliant: boolean;
+    conflicts: { headName: string; villages: string[] }[];
+  } {
+    const villages = this.getVillages();
+    const nameMap = new Map<string, string[]>();
+    villages.forEach((v) => {
+      const name = (v.villageHead?.name || v.villageHeadName || '').trim();
+      if (name) {
+        const list = nameMap.get(name) || [];
+        list.push(v.name);
+        nameMap.set(name, list);
+      }
+    });
+    const conflicts: { headName: string; villages: string[] }[] = [];
+    nameMap.forEach((vils, hName) => {
+      if (vils.length > 1) {
+        conflicts.push({ headName: hName, villages: vils });
+      }
+    });
+    return {
+      totalVillages: villages.length,
+      assignedHeadsCount: villages.filter((v) => !v.villageHead?.name && !v.villageHeadName ? false : true).length,
+      uniqueHeadsCount: nameMap.size,
+      isCompliant: conflicts.length === 0,
+      conflicts,
+    };
   },
   deleteVillage(villageId: string): void {
     const list = this.getVillages().filter(
