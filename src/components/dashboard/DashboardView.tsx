@@ -14,9 +14,16 @@ import {
   Layers,
   ChevronRight,
   TrendingUp,
+  Vote,
+  Users,
+  Video,
+  MapPin,
+  Radio,
 } from 'lucide-react';
 import { Issue, FieldVisit, PublicMeeting, DevelopmentWork, Village, GramPanchayat, Department, ActiveTab } from '../../types';
 import { StatusBadge, PriorityBadge } from '../common/Badge';
+import { DashboardMapWidget } from './DashboardMapWidget';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface DashboardViewProps {
   issues?: Issue[];
@@ -213,42 +220,178 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     (w) => w && (w.status === 'Delayed' || w.status === 'In Progress')
   ).slice(0, 3);
 
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-6 pb-12">
-      {/* Top Banner / Hero Bar */}
-      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-              Constituency Overview &amp; All Activity
+      {/* Top Banner / "What is happening in Sindhanur AC-58 today?" */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 rounded-2xl border border-slate-800 shadow-md relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-2">
+              <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              <span>AC-58 SINDHANUR • LIVE CONSTITUENCY OPERATIONS</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+              {t('today_in_sindhanur', 'What is happening in Sindhanur AC-58 today?')}
             </h1>
-            <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono font-medium border border-slate-200">
-              AC-58 SINDHANUR
-            </span>
-            <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-semibold border border-indigo-200">
-              Admin Oversight
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Complete administrative activity tracking, public grievances, department resolution logs, and infrastructure progress.
-          </p>
-        </div>
+            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+              {t('today_subtitle', 'Real-time constituency operations, citizen grievances, village video sabhas, and development tracking.')}
+            </p>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onNavigate('reports')}
-            className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 transition-colors flex items-center gap-1.5"
-          >
-            Generate Report
-          </button>
-          <button
-            onClick={handleOpenNewIssue}
-            className="px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors flex items-center gap-1.5"
-          >
-            + Register New Grievance
-          </button>
+            {/* Today's Operational Pulse Bar */}
+            <div className="flex flex-wrap items-center gap-2 mt-3 text-xs">
+              <span className="bg-white/10 px-2.5 py-1 rounded-md text-emerald-300 font-semibold border border-white/10 flex items-center gap-1.5">
+                <Video className="w-3.5 h-3.5" />
+                <span>2 Video Conferences Scheduled</span>
+              </span>
+              <span className="bg-white/10 px-2.5 py-1 rounded-md text-amber-300 font-semibold border border-white/10 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>1 Active Field Visit (Salgunda)</span>
+              </span>
+              <span className="bg-white/10 px-2.5 py-1 rounded-md text-blue-300 font-semibold border border-white/10 flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5" />
+                <span>{openIssues} Open Grievances Under Action</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => onNavigate('video-conferences')}
+              className="px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Video className="w-3.5 h-3.5" />
+              <span>Village Video Call</span>
+            </button>
+            <button
+              onClick={handleOpenNewIssue}
+              className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>+ Raise an Issue</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Top 8 KPI Cards requested by user */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3.5">
+        {/* 1. Total Villages */}
+        <div
+          onClick={() => onNavigate('villages')}
+          className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:border-indigo-300 hover:shadow-md cursor-pointer transition-all group"
+        >
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-semibold">{t('total_villages', 'Total Villages')}</span>
+            <Building2 className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+          </div>
+          <div className="text-2xl font-black text-slate-900">{villages.length || 124}</div>
+          <div className="text-[10px] text-slate-400 mt-0.5">Across 35 Gram Panchayats</div>
+        </div>
+
+        {/* 2. Total Gram Panchayats */}
+        <div
+          onClick={() => onNavigate('villages')}
+          className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:border-indigo-300 hover:shadow-md cursor-pointer transition-all group"
+        >
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-semibold">{t('total_gps', 'Gram Panchayats')}</span>
+            <Layers className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+          </div>
+          <div className="text-2xl font-black text-slate-900">{gramPanchayats.length || 35}</div>
+          <div className="text-[10px] text-slate-400 mt-0.5">Local governance clusters</div>
+        </div>
+
+        {/* 3. Total Booths */}
+        <div
+          onClick={() => onNavigate('booths')}
+          className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:border-indigo-300 hover:shadow-md cursor-pointer transition-all group"
+        >
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-semibold">{t('total_booths', 'Total Booths')}</span>
+            <Vote className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+          </div>
+          <div className="text-2xl font-black text-slate-900">262</div>
+          <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">100% Coordinator Coverage</div>
+        </div>
+
+        {/* 4. Total Registered Workers */}
+        <div
+          onClick={() => onNavigate('members')}
+          className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:border-indigo-300 hover:shadow-md cursor-pointer transition-all group"
+        >
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-semibold">{t('total_workers', 'Registered Workers')}</span>
+            <Users className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+          </div>
+          <div className="text-2xl font-black text-slate-900">1,480</div>
+          <div className="text-[10px] text-slate-400 mt-0.5">Cadre &amp; booth volunteers</div>
+        </div>
+
+        {/* 5. Total Issues */}
+        <div
+          onClick={() => onNavigate('issues')}
+          className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:border-slate-300 hover:shadow-md cursor-pointer transition-all group"
+        >
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-semibold">{t('total_issues', 'Total Issues')}</span>
+            <AlertCircle className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+          </div>
+          <div className="text-2xl font-black text-slate-900">{totalIssues}</div>
+          <div className="text-[10px] text-slate-400 mt-0.5">Constituency grievances</div>
+        </div>
+
+        {/* 6. Open Issues */}
+        <div
+          onClick={() => onNavigate('issues')}
+          className="bg-white p-4 rounded-xl border border-blue-200 shadow-xs hover:border-blue-400 hover:shadow-md cursor-pointer transition-all group"
+        >
+          <div className="flex items-center justify-between text-blue-600 mb-1">
+            <span className="text-xs font-semibold">{t('open_issues', 'Open Issues')}</span>
+            <Clock className="w-4 h-4 text-blue-500" />
+          </div>
+          <div className="text-2xl font-black text-blue-900">{openIssues}</div>
+          <div className="text-[10px] text-blue-600/80 font-semibold mt-0.5">
+            {inProgressIssues} in active execution
+          </div>
+        </div>
+
+        {/* 7. Resolved Issues */}
+        <div
+          onClick={() => onNavigate('issues')}
+          className="bg-white p-4 rounded-xl border border-emerald-200 shadow-xs hover:border-emerald-400 hover:shadow-md cursor-pointer transition-all group"
+        >
+          <div className="flex items-center justify-between text-emerald-600 mb-1">
+            <span className="text-xs font-semibold">{t('resolved_issues', 'Resolved Issues')}</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="text-2xl font-black text-emerald-900">{resolvedIssues}</div>
+          <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">{resolutionRate}% Resolution Rate</div>
+        </div>
+
+        {/* 8. Upcoming Meetings */}
+        <div
+          onClick={() => onNavigate('meetings')}
+          className="bg-white p-4 rounded-xl border border-purple-200 shadow-xs hover:border-purple-400 hover:shadow-md cursor-pointer transition-all group"
+        >
+          <div className="flex items-center justify-between text-purple-600 mb-1">
+            <span className="text-xs font-semibold">{t('upcoming_meetings', 'Upcoming Meetings')}</span>
+            <Calendar className="w-4 h-4 text-purple-500" />
+          </div>
+          <div className="text-2xl font-black text-purple-900">
+            {(publicMeetings?.length || 0) + 2}
+          </div>
+          <div className="text-[10px] text-purple-600 font-semibold mt-0.5">Sabhas &amp; Video Calls</div>
+        </div>
+      </div>
+
+      {/* Constituency Map Snapshot Widget */}
+      <DashboardMapWidget
+        villages={villages}
+        issues={issues}
+        developmentWorks={developmentWorks}
+        onNavigate={onNavigate}
+      />
 
       {/* Filter Bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
@@ -369,89 +512,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <option value="Medium">Medium</option>
               <option value="Low">Low</option>
             </select>
-          </div>
-        </div>
-      </div>
-
-      {/* KPI Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {/* Total Issues */}
-        <div
-          onClick={() => onNavigate('issues')}
-          className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:border-slate-300 cursor-pointer transition-all group"
-        >
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-semibold">Total Issues</span>
-            <AlertCircle className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors" />
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900">{totalIssues}</div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Reported across AC-58</div>
-        </div>
-
-        {/* Open Issues */}
-        <div
-          onClick={() => onNavigate('issues')}
-          className="bg-white p-4 rounded-xl border border-blue-100 shadow-xs hover:border-blue-300 cursor-pointer transition-all group"
-        >
-          <div className="flex items-center justify-between text-blue-600 mb-1">
-            <span className="text-xs font-semibold">Open Issues</span>
-            <Clock className="w-4 h-4 text-blue-500" />
-          </div>
-          <div className="text-2xl font-extrabold text-blue-900">{openIssues}</div>
-          <div className="text-[10px] text-blue-600/80 mt-0.5">Action pending</div>
-        </div>
-
-        {/* In Progress */}
-        <div
-          onClick={() => onNavigate('issues')}
-          className="bg-white p-4 rounded-xl border border-amber-100 shadow-xs hover:border-amber-300 cursor-pointer transition-all group"
-        >
-          <div className="flex items-center justify-between text-amber-600 mb-1">
-            <span className="text-xs font-semibold">In Progress</span>
-            <RotateCcw className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-2xl font-extrabold text-amber-900">{inProgressIssues}</div>
-          <div className="text-[10px] text-amber-600/80 mt-0.5">Active field execution</div>
-        </div>
-
-        {/* Resolved */}
-        <div
-          onClick={() => onNavigate('issues')}
-          className="bg-white p-4 rounded-xl border border-emerald-100 shadow-xs hover:border-emerald-300 cursor-pointer transition-all group"
-        >
-          <div className="flex items-center justify-between text-emerald-600 mb-1">
-            <span className="text-xs font-semibold">Resolved</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="text-2xl font-extrabold text-emerald-900">{resolvedIssues}</div>
-          <div className="text-[10px] text-emerald-600/80 mt-0.5">Verified completed</div>
-        </div>
-
-        {/* Overdue */}
-        <div
-          onClick={() => onNavigate('issues')}
-          className="bg-white p-4 rounded-xl border border-red-100 shadow-xs hover:border-red-300 cursor-pointer transition-all group"
-        >
-          <div className="flex items-center justify-between text-red-600 mb-1">
-            <span className="text-xs font-semibold">Overdue</span>
-            <AlertTriangle className="w-4 h-4 text-red-500" />
-          </div>
-          <div className="text-2xl font-extrabold text-red-900">{overdueIssues}</div>
-          <div className="text-[10px] text-red-600/80 mt-0.5">Past target resolution date</div>
-        </div>
-
-        {/* Resolution Rate */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-semibold">Resolution Rate</span>
-            <TrendingUp className="w-4 h-4 text-slate-400" />
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900">{resolutionRate}%</div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1.5">
-            <div
-              className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-              style={{ width: `${resolutionRate}%` }}
-            />
           </div>
         </div>
       </div>

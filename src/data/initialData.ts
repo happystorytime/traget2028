@@ -14,6 +14,7 @@ import {
   AuditLog,
 } from '../types';
 import { ALL_124_VILLAGES, INITIAL_VILLAGE_MEMBERS, ALL_GRAM_PANCHAYATS } from './officialVillages';
+import { ALL_262_POLLING_BOOTHS } from './officialBooths';
 
 export const INITIAL_USERS: User[] = [
   {
@@ -167,53 +168,7 @@ export const INITIAL_VILLAGES: Village[] = ALL_124_VILLAGES;
 
 export { INITIAL_VILLAGE_MEMBERS };
 
-export const INITIAL_POLLING_BOOTHS: PollingBooth[] = [
-  {
-    id: 'PB-001',
-    boothNumber: 1,
-    boothName: 'Government Higher Primary School (East Wing)',
-    village: 'Gorebal',
-    gramPanchayat: 'Gorebal GP',
-    buildingName: 'GHPS Building Room 1',
-    votersCount: 842,
-  },
-  {
-    id: 'PB-002',
-    boothNumber: 2,
-    boothName: 'Government Higher Primary School (West Wing)',
-    village: 'Gorebal',
-    gramPanchayat: 'Gorebal GP',
-    buildingName: 'GHPS Building Room 2',
-    votersCount: 915,
-  },
-  {
-    id: 'PB-015',
-    boothNumber: 15,
-    boothName: 'Government Urdu Model Primary School',
-    village: 'Sindhanur Town (CMC Wards 1-31)',
-    gramPanchayat: 'Sindhanur City (CMC)',
-    buildingName: 'GUM School Main Hall',
-    votersCount: 1120,
-  },
-  {
-    id: 'PB-032',
-    boothNumber: 32,
-    boothName: 'Government High School Jalihal',
-    village: 'Jalihal',
-    gramPanchayat: 'Jalihal GP',
-    buildingName: 'GHS Laboratory Hall',
-    votersCount: 780,
-  },
-  {
-    id: 'PB-048',
-    boothNumber: 48,
-    boothName: 'Government Composite Junior College Turvihal',
-    village: 'Turvihal',
-    gramPanchayat: 'Turvihal GP',
-    buildingName: 'College Section Hall A',
-    votersCount: 960,
-  },
-];
+export const INITIAL_POLLING_BOOTHS: PollingBooth[] = ALL_262_POLLING_BOOTHS;
 
 export const INITIAL_ISSUES: Issue[] = [
   {

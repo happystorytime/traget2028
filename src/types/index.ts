@@ -44,6 +44,7 @@ export interface VillageMember {
 export interface Village {
   id: string;
   slNo?: number;
+  villageCode?: string;
   name: string;
   gramPanchayat: string;
   taluk: string;
@@ -51,6 +52,10 @@ export interface Village {
   district: string;
   coordinates: { lat: number; lng: number };
   pinCode?: string;
+  population?: number;
+  households?: number;
+  contactPerson?: string;
+  contactPhone?: string;
   villageHead?: VillageHead;
   villageHeadName?: string;
   villageHeadPhone?: string;
@@ -83,6 +88,14 @@ export interface PollingBooth {
   gramPanchayat: string;
   buildingName: string;
   votersCount?: number;
+  maleVoters?: number;
+  femaleVoters?: number;
+  otherVoters?: number;
+  coordinatorName?: string;
+  coordinatorPhone?: string;
+  volunteersCount?: number;
+  lastFieldVisitDate?: string;
+  status?: 'Active' | 'Sensitive' | 'Normal';
 }
 
 export interface Department {
@@ -370,6 +383,7 @@ export type ActiveTab =
   | 'villages'
   | 'members'
   | 'map'
+  | 'booths'
   | 'field-visits'
   | 'meetings'
   | 'video-conferences'

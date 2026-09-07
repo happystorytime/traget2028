@@ -13,8 +13,10 @@ import {
   Smartphone,
   CheckCircle2,
   PlusCircle,
+  Languages,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { RoleBadge } from './Badge';
 import { UserRole } from '../../types';
 
@@ -38,6 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   unreadNotificationsCount = 0,
 }) => {
   const { currentUser, switchRole, allUsers, isOtpLoggedIn, logout, isMember, isAdmin } = useAuth();
+  const { language, toggleLanguage } = useLanguage();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
 
   const roles: { role: UserRole; label: string; desc: string }[] = [
@@ -157,6 +160,17 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="sm:hidden">OTP</span>
             </button>
           )}
+
+          {/* Language Switcher */}
+          <button
+            onClick={toggleLanguage}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+            title={language === 'en' ? 'ಕನ್ನಡಕ್ಕೆ ಬದಲಾಯಿಸಿ' : 'Switch to English'}
+            aria-label="Toggle language"
+          >
+            <Languages className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            <span className="font-medium text-xs">{language === 'en' ? 'ಕನ್ನಡ' : 'English'}</span>
+          </button>
 
           {/* Notifications */}
           <button

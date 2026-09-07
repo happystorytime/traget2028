@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { StorageService } from './services/storage';
 import {
   ActiveTab,
@@ -259,6 +260,8 @@ function MainLayout() {
               developmentWorks={developmentWorks}
               pollingBooths={StorageService.getPollingBooths()}
               gramPanchayats={gramPanchayats}
+              publicMeetings={publicMeetings}
+              fieldVisits={fieldVisits}
               onNavigate={handleNavigate}
             />
           )}
@@ -379,8 +382,10 @@ function MainLayout() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <MainLayout />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <MainLayout />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
